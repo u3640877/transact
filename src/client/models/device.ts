@@ -1,4 +1,3 @@
-
 export class DeviceType {
   name: string;
   description: string;
@@ -25,22 +24,16 @@ export class Capability {
 };
 
 export class Device {
-  id: string;
-  name: string;
-  os: string;
-  type: DeviceType;
-  heartbeat: Date;
-  capabilities: Capability[];
-  constructor(id: string, name: string, os: string, heartbeat: Date,
-    capabilities: Capability[] = [], type: DeviceType) {
-
-    this.id = id;
-    this.name = name;
-    this.os = os;
-    this.heartbeat = heartbeat;
-    this.capabilities = capabilities;
-    this.type = type;
-  }
+  constructor(
+    public id: string,
+    public name: string,
+    public os: string,
+    public heartbeat: Date,
+    public capabilities: Capability[],
+    public robot: Robot,
+    public health: string = 'Unknown', // Add health property
+    public lastUpdated: Date | null = null // Add lastUpdated property
+  ) {}
 }
 
 export default {

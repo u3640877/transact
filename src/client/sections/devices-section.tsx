@@ -16,9 +16,6 @@ import { Capability, Device } from '@models/device';
 import { capabilities } from '@config/config';
 import { FleetContext } from '@components/fleet-context';
 import { Heartbeat } from '@components/heartbeat';
-import { Accordion, AccordionItem, AccordionTrigger } from '@components/ui/accordion';
-import { AccordionContent } from '@radix-ui/react-accordion';
-import { JWTCapability } from '@components/jwt-capability';
 import { BatteryIcon } from '@components/battery-icon';
 import { CityLabel } from '@components/city-label';
 
@@ -68,7 +65,7 @@ export function DevicesSection() {
                   </TableCell>
                   <TableCell>
                     <div className='flex items-center gap-2 flex-wrap'>
-                      {_.map(device.capabˋˋˋˋilities, (capability: Capability) => {
+                      {_.map(device.capabilities, (capability: Capability) => {
                         if (capability?.route) {
                           return <Link
                             key={device.id + capability.displayName}
@@ -93,6 +90,8 @@ export function DevicesSection() {
         <div
           className='rounded-lg border border-dashed shadow-sm px-6'
         >
+          {/* Commented out the accordion list */}
+          {/*
           <Accordion type="single" collapsible className='w-full'>
             {_.map(capabilities, (capability: Capability, capabilityId: string) => (
               <AccordionItem key={capabilityId} value={capabilityId}>
@@ -113,6 +112,7 @@ export function DevicesSection() {
             )
             )}
           </Accordion>
+          */}
         </div>
       </main>
     </>

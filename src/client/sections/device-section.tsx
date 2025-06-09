@@ -13,6 +13,7 @@ import { MapComponent } from '@components/map-component';
 import { getLogger} from '@transitive-sdk/utils-web';
 import { TriggerServiceButton } from '@components/trigger-service-button';
 import { useTheme } from '@components/theme-provider';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@components/ui/accordion';
 
 const log = getLogger('DeviceSection');
 log.setLevel('debug');
@@ -46,6 +47,8 @@ export function DeviceSection() {
 
   const device = _.find(fleet, { id: deviceId }) as Device;
   const [command, setCommand] = useState('');
+
+  console.log(device);
 
   if (!device) {
     return <div>Loading Device section</div>;
@@ -117,8 +120,8 @@ export function DeviceSection() {
           )}
         </div>
 
-        {/* Terminal Capability */}
-        <div className="relative border rounded-lg shadow-md overflow-hidden h-48 col-start-2">
+        {/* Terminal Capability Section */}
+        <div className="relative border rounded-lg shadow-md overflow-hidden h-48 col-start-1">
           <div className="flex flex-col h-full">
             {/* Terminal Logs */}
             <div className="flex-grow overflow-y-auto p-4 bg-black text-white">
@@ -149,6 +152,61 @@ export function DeviceSection() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Battery, CPU, GPU, and Working Time Section */}
+        <div className="relative border rounded-lg shadow-md overflow-hidden h-48 col-start-2">
+          <div className="flex flex-col h-full p-4 bg-gray-100">
+            <h2 className="text-lg font-bold mb-2">Device Metrics</h2>
+            {mqttSync && mqttSync.mqtt.connected ? (
+              <div className="flex flex-col gap-2">
+                <p><b>Battery Power:</b> {device?.metrics?.battery || 'Unknown'}%</p>
+                <p><b>CPU Usage:</b> {device?.metrics?.cpu || 'Unknown'}%</p>
+                <p><b>GPU Usage:</b> {device?.metrics?.gpu || 'Unknown'}%</p>
+                <p><b>Working Time:</b> {device?.metrics?.workingTime || 'Unknown'} hours</p>
+              </div>
+            ) : (
+              <p>Metrics data unavailable. Ensure MQTT is connected.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Accordion Section */}
+        <div className="col-span-2">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="health">
+              <AccordionTrigger>Health</AccordionTrigger>
+              <AccordionContent>
+                <div className="p-4">
+                  <h2 className="text-lg font-bold">Device Health</h2>
+                  <p className="text-sm text-muted">
+                    {device?.health === 'Unknown' ? 'Health data unavailable' : `Health Status: ${device.health}`}
+                  </p>
+                  <p className="text-sm text-muted">
+                    Last Updated: {device?.lastUpdated ? new Date(device.lastUpdated).toLocaleString() : 'Unknown'}
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="configuration">
+              <AccordionTrigger>Configuration</AccordionTrigger>
+              <AccordionContent>
+                <div className="p-4">
+                  <p>Device configuration options and settings will be displayed here.</p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="teleoperation">
+              <AccordionTrigger>Teleoperation</AccordionTrigger>
+              <AccordionContent>
+                <div className="p-4">
+                  <p>Teleoperation controls and logs will be displayed here.</p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </main>
     </>

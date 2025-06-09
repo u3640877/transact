@@ -1,13 +1,13 @@
-import React, { createContext, useEffect, useContext } from 'react'
+import React, { createContext, useEffect, useContext } from 'react';
 import _ from 'lodash';
 
 import { JWTContext, JWTContextProvider } from '@components/jwt-context';
 
-import { useMqttSync, mergeVersions, CapabilityContextProvider  }
+import { useMqttSync, mergeVersions, CapabilityContextProvider }
   from '@transitive-sdk/utils-web';
 import { Capability, Device, Robot } from '@models/device';
 import { capabilities } from '@config/config';
-import { getLogger} from '@transitive-sdk/utils-web';
+import { getLogger } from '@transitive-sdk/utils-web';
 import { UserContext } from "@components/user-context";
 
 const log = getLogger('FleetContext');
@@ -24,26 +24,50 @@ export const FleetContext = createContext({});
 const ProviderWithRosTool = ({ children }) => {
   const jwt = useContext(JWTContext);
 
-  const { mqttSync, data, ready } = useMqttSync({jwt, id: transitiveId, mqttUrl});
+  const { mqttSync, data, ready } = useMqttSync({ jwt, id: transitiveId, mqttUrl });
 
   useEffect(() => {
-      mqttSync?.mqtt.connected && mqttSync.subscribe(
+    if (mqttSync?.mqtt.connected) {
+      mqttSync.subscribe(
         `/${transitiveId}/+/@transitive-robotics/_robot-agent/+/info`,
-        (err) => err && console.warn('Failed to subscribe', err));
-      mqttSync?.mqtt.connected && mqttSync.subscribe(
+        (err) => {
+          if (err) {
+            console.warn('Failed to subscribe to info topic:', err);
+          }
+        }
+      );
+      mqttSync.subscribe(
         `/${transitiveId}/+/@transitive-robotics/_robot-agent/+/status`,
-        (err) => err && console.warn('Failed to subscribe', err));
-    }, [mqttSync]);
+        (err) => {
+          if (err) {
+            console.warn('Failed to subscribe to status topic:', err);
+          }
+        }
+      );
+    } else {
+      console.error('MQTT is not connected');
+    }
+  }, [mqttSync]);
 
   const fleet = _.map(data?.[transitiveId], (device, id) => {
     const device_data = mergeVersions(device['@transitive-robotics']['_robot-agent']);
     const running = device_data?.status?.runningPackages?.['@transitive-robotics'];
-    // To tell whether a capability is running we need to also verify that at least
-    // one of the values in the versions-object is truthy
-    const deviceCapabilities = running ? Object.keys(_.pickBy(running,
-        versions => Object.values(versions).some(Boolean))) : [];
+    const deviceCapabilities = running
+      ? Object.keys(_.pickBy(running, versions => Object.values(versions).some(Boolean)))
+      : [];
 
-    return new Device(
+    // Extract health and lastUpdated data
+    const health = device_data?.status?.health || 'Unknown';
+    const lastUpdated = device_data?.status?.lastUpdated || new Date().toISOString();
+
+    if (!device_data?.status?.health) {
+      log.warn(`Health data missing for device ${id}`);
+    }
+    if (!device_data?.status?.lastUpdated) {
+      log.warn(`Last updated data missing for device ${id}`);
+    }
+
+    const deviceInstance = new Device(
       id,
       device_data?.info?.os?.hostname || id,
       device_data?.info?.os?.lsb?.Description || 'Unknown',
@@ -55,11 +79,15 @@ const ProviderWithRosTool = ({ children }) => {
           return new Capability(capability, capability);
         }
       }),
-      Robot
+      Robot,
+      health, // Add health property
+      lastUpdated // Add lastUpdated property
     );
+
+    return deviceInstance;
   });
 
-  // sort fleet
+  // Sort fleet
   fleet.sort((a, b) => a.name.localeCompare(b.name));
 
   return <FleetContext.Provider value={{ mqttSync, fleet }}>
@@ -67,14 +95,14 @@ const ProviderWithRosTool = ({ children }) => {
   </FleetContext.Provider>;
 };
 
-const ProviderWithJwt = ({children}) => {
+const ProviderWithJwt = ({ children }) => {
   const jwt = useContext(JWTContext);
-  return(
+  return (
     <CapabilityContextProvider jwt={jwt} host={host} ssl={secure}>
       {children}
     </CapabilityContextProvider>
   );
-}
+};
 
 /** A context with basic fleet data (names, status of devices). */
 export const FleetContextProvider = ({ children }) => {
@@ -91,4 +119,5 @@ export const FleetContextProvider = ({ children }) => {
     <div>
       <h1>Not logged in</h1>
     </div>
-  )};
+  );
+};
