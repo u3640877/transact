@@ -3,13 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DeviceSelector from '@components/device-selector';
 import { JWTCapability } from '@components/jwt-capability';
 
+// Simple blackboard component
+function Blackboard() {
+  return (
+    <div
+      className="w-full h-64 flex items-center justify-center rounded-lg border border-dashed shadow-sm bg-black text-white text-xl"
+      style={{ minHeight: 200 }}
+    >
+      Blackboard: No input available for this capability.
+    </div>
+  );
+}
+
 interface SectionProps {
   capability: string;
   route: string;
   additionalProps?: Record<string, any>; // Props to be passed to JWTCapability
 }
 
-/** A reusable Section component, wrapping an given Transitive capability
+/** A reusable Section component, wrapping a given Transitive capability
 * component and embedding props.
 *
 * Example:
@@ -22,6 +34,13 @@ interface SectionProps {
 export function CapabilitySection({ capability, route, additionalProps = {} }: SectionProps) {
   const { deviceId } = useParams();
   const navigate = useNavigate();
+
+  // Check if there is any input-related prop
+  const hasInput =
+    additionalProps &&
+    Object.keys(additionalProps).some((key) =>
+      key.toLowerCase().includes('input')
+    );
 
   return (
     <>
@@ -36,16 +55,23 @@ export function CapabilitySection({ capability, route, additionalProps = {} }: S
             />
           </div>
         </div>
+        {/* Add this sentence to show where you are */}
+        <span className="text-xs text-muted-foreground ml-4">
+          You are viewing the CapabilitySection for <b>{capability}</b>
+        </span>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         <div className="flex flex-1 items-center justify-center rounded-lg
           border border-dashed shadow-sm">
           {deviceId && (
-            <JWTCapability
-              device={deviceId}
-              capability={`@transitive-robotics/${capability}`}
-              {...additionalProps}
-            />
+            <>
+              <JWTCapability
+                device={deviceId}
+                capability={`@transitive-robotics/${capability}`}
+                {...additionalProps}
+              />
+              {!hasInput && <Blackboard />}
+            </>
           )}
         </div>
       </main>

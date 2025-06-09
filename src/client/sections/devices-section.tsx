@@ -68,7 +68,7 @@ export function DevicesSection() {
                   </TableCell>
                   <TableCell>
                     <div className='flex items-center gap-2 flex-wrap'>
-                      {_.map(device.capabilities, (capability: Capability) => {
+                      {_.map(device.capabˋˋˋˋilities, (capability: Capability) => {
                         if (capability?.route) {
                           return <Link
                             key={device.id + capability.displayName}
