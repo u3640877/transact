@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "admin",
+    "bcryptPassword": "$2b$10$UOFdHczqBrWyaiF0g2As4uC0cTAD7ymkkp1lAaNE7ccS6x5XLJgcS",
+    "email": "admin_@superbots.com",
+    "created": "2025-08-15T04:49:26.547Z",
+    "admin": true,
+    "verified": true
+  },
+  {
+    "_id": "test",
+    "bcryptPassword": "$2b$10$8CG.Dqknlz3SaKN7DlWtSOQ3fSbEePVxUZHDVXXKn2HEjNtdgG1Di",
+    "email": "test@example.com",
+    "created": "2025-08-15T14:56:19.003Z"
+  }
+]

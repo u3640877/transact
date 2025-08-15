@@ -7,6 +7,7 @@ import './app.css';
 import { ThemeProvider } from './components/theme-provider.js';
 import { UserContextProvider } from './components/user-context.js';
 import { Login } from './components/login.js';
+import { CreateAccount } from './components/create-account.js';
 
 import { getLogger} from '@transitive-sdk/utils-web';
 import DashBoard from './dashboard.js';
@@ -22,6 +23,7 @@ function App() {
         <UserContextProvider>          
           <Routes>
             <Route path='/login' element={<Login/>} />
+            <Route path='/create-account' element={<CreateAccount/>} />
             <Route path='/dashboard/*' element={<DashBoard/>} />
             <Route path='*' element={<Navigate to='/dashboard/devices' />} />
           </Routes>

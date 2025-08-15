@@ -89,22 +89,69 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Logout the user
-app.post('/api/logout', async (req, res, next) => {
-  log.debug('/api/logout', req.session.user);
-  req.session.user = null
-  req.session.save((err) => {
-    if (err) {
-      log.error('failed to save session', err);
-      next(err);
-    }
-    req.session.regenerate((err) => {
+app.post('/api/logout', (req, res) => {
+  if (req.session.user) {
+    const wasUsername = req.session.user._id;
+    req.session.destroy((err) => {
       if (err) {
-        log.error('failed to regenerate session', err);
-        next(err);
+        log.warn('Error destroying session:', err);
+        res.status(500).json({ error: 'Could not destroy session' });
+      } else {
+        res.clearCookie(COOKIE_NAME, { httpOnly: false, secure: false });
+        log.debug('logged out', { wasUsername });
+        res.status(200).json({ status: 'ok' });
       }
-      res.clearCookie(COOKIE_NAME).json({status: 'ok'});
     });
-  })
+  } else {
+    log.warn('logout of not-logged in user');
+    res.status(403).json({ error: 'Not logged in' });
+  }
+});
+
+// Register new user
+app.post('/api/register', async (req, res) => {
+  log.debug('Registration attempt:', { name: req.body.name, email: req.body.email });
+  const { name, password, email } = req.body;
+  
+  if (!name || !password || !email) {
+    log.warn('Registration failed: missing required fields');
+    return res.status(400).json({ 
+      error: 'Username, password, and email are required'
+    });
+  }
+  
+  try {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Check if username already exists
+    const existingAccount = await getAccount(name);
+    if (existingAccount) {
+      return res.status(409).json({ error: 'Username already taken' });
+    }
+    
+    // Create account (not admin by default, not verified by default)
+    const newAccount = await createAccount({
+      name,
+      password,
+      email,
+      admin: false,
+      verified: false
+    });
+    
+    if (!newAccount) {
+      return res.status(500).json({ error: 'Failed to create account' });
+    }
+    
+    log.info(`Account created for ${name}`);
+    res.status(201).json({ status: 'ok' });
+  } catch (err) {
+    log.error('Error creating account:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 

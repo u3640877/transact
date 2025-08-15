@@ -7,7 +7,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const log = getLogger('UserContext');
 log.setLevel('debug');
 
-export const UserContext = React.createContext({});
+interface UserContextType {
+  ready?: boolean;
+  session?: any;
+  login?: (user: string, password: string) => void;
+  logout?: () => void;
+  register?: (user: string, password: string, email: string) => void;
+  error?: string | null;
+}
+
+export const UserContext = React.createContext<UserContextType>({});
 export const UserContextProvider = ({children}) => {
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState();
@@ -30,7 +39,8 @@ export const UserContextProvider = ({children}) => {
     .then(response => {
       refresh();
       if (!response.ok) {
-        if (location.pathname === '/login') {
+        // Don't redirect if we're already on login or create-account pages
+        if (location.pathname === '/login' || location.pathname === '/create-account') {
           return;
         }
         log.debug('not logged in');
@@ -39,6 +49,10 @@ export const UserContextProvider = ({children}) => {
     })
     .catch(function(err) {
       log.error(err);
+      // Don't redirect if we're already on login or create-account pages
+      if (location.pathname === '/login' || location.pathname === '/create-account') {
+        return;
+      }
       navigate('/login');
     });
 
@@ -91,20 +105,30 @@ export const UserContextProvider = ({children}) => {
         setError('Failed to log out');
       });
 
-//   /** register new account */
-//   const register = (user, password, email) =>
-//     fetchJson(`/@transitive-robotics/_robot-agent/register`,
-//       (err, res) => {
-//         if (err) {
-//           log.error(err, res);
-//           setError(`Failed to register: ${res.error}`);
-//         } else {
-//           setError(null);
-//           log.debug('registered');
-//           refresh();
-//         }
-//       },
-//       {body: {name: user, password, email}});
+  /** register new account */
+  const register = (user, password, email) =>
+    fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: user, password, email })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          setError(`Failed to register: ${data.error}`);
+          throw new Error(data.error);
+        }
+        setError(null);
+        log.debug('registered');
+        // Automatically login after successful registration
+        login(user, password);
+      })
+      .catch(function(err) {
+        log.error(err);
+        setError(`Failed to register: ${err.message || 'Unknown error'}`);
+      });
 
 //   const forgot = (email) =>
 //     fetchJson(`/@transitive-robotics/_robot-agent/forgot`,
@@ -134,7 +158,7 @@ export const UserContextProvider = ({children}) => {
 //       {body: {name: user, password, code}});
 
   return <UserContext.Provider
-    value={{ ready, session, login, logout, error }}>
+    value={{ ready, session, login, logout, register, error }}>
     {children}
   </UserContext.Provider>;
 };
