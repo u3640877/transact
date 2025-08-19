@@ -108,34 +108,113 @@ Questions? [Join our Slack](https://transitiverobotics.com/slack) and we'll try 
 SuperBots Logo: <a href="https://www.flaticon.com/free-icons/robot" title="robot icons">Robot icons created by Freepik - Flaticon</a>
 
 
-### For DragonFly Developers
+# For DragonFly Developers
 
 ## Run server from terminal
-ssh -i ~/.ssh/digitalocean root@server_ip
+`ssh -i ~/.ssh/digitalocean root@server_ip`
 
-## Install Packages
-apt update
-apt upgrade
-apt install npm
-apt install nodejs 
-apt install git
+## 1.Install Packages
+`apt update`
+`apt upgrade`
+`apt install npm`
+`apt install nodejs`
+`apt install git`
 
-## Install Webapp
+## 2.Install Webapp
 git clone https://github.com/transitiverobotics/transact.git
 
-## Configure Variable
-cd transact
-cp sample.env .env
-edit variable in .env 
-npm install
+## 3.Configure Portal Variable from Transitive
+`cd transact`
+`cp sample.env .env`
+`edit variable in .env`
+`npm install`
 
-## Configure DNS
+## 4.Configure DNS
+Get domain from companies
 A; @; yourdomain@example.com; 1800
 
-## Start Webapp
-ufw allow 3000
-npm run dev
+## 5. Set Up SSL (for HTTPS)
 
-## Set Up SSL
+### Private Key
+`openssl req -new -newkey rsa:2048 -nodes -keyout yourdomain.key -out yourdomain.csr`
+
+### SSL Certificate
+Issued from authorities
+receive though email in zip files
+
+### Web Server
 apt install nginx
+sudo mkdir -p /etc/nginx/ssl
+sudo chmod 700 /etc/nginx/ssl
+sudo mv ~/transact/yourdomain.csr /etc/nginx/ssl/
+sudo mv ~/transact/yourdomain.key /etc/nginx/ssl/
 
+sudo nano /etc/nginx/ssl/yourdomain.crt
+paste the content from SSL Certs
+
+**EXAMPLE yourdomain.crt**
+```
+-----BEGIN CERTIFICATE-----
+MIIGnjCCBQagAwIBAgIQE4DS0T05At9seriNLcUFVDANBgkqhkiG9w0BAQsFADBg
+MQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTcwNQYDVQQD
+Ey5TZWN0aWdvIFB1YmxpYyBTZXJ2ZXIgQXV0aGVudGljYXRpb24gQ0EgRFYgUjM2
+... [rest of 2535248793.crt]
+-----END CERTIFICATE-----
+
+-----BEGIN CERTIFICATE-----
+MIIGTDCCBDSgAwIBAgIQOXpmzCdWNi4NqofKbqvjsTANBgkqhkiG9w0BAQwFADBf
+MQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTYwNAYDVQQD
+Ey1TZWN0aWdvIFB1YmxpYyBTZXJ2ZXIgQXV0aGVudGljYXRpb24gUm9vdCBSNDYw
+... [rest of SectigoPublicServerAuthenticationCADVR36.crt]
+-----END CERTIFICATE-----
+
+-----BEGIN CERTIFICATE-----
+... [rest of SectigoPublicServerAuthenticationRootR46_USERTrust.crt]
+-----END CERTIFICATE-----
+```
+
+`sudo chmod 600 /etc/nginx/ssl/dragonflyrobotics.*`
+`ls -l /etc/nginx/ssl/`
+
+
+`sudo nano /etc/nginx/sites-available/yourdomain`
+**EXAMPLE for yourdomain = dragonflyrobotics**
+
+```server {
+    listen 80;
+    server_name dragonflyrobotics.live www.dragonflyrobotics.live;
+    return 301 https://$server_name$request_uri; # Redirect HTTP to HTTPS
+}
+
+server {
+    listen 443 ssl;
+    server_name dragonflyrobotics.live www.dragonflyrobotics.live;
+
+    ssl_certificate /etc/nginx/ssl/dragonflyrobotics.crt;
+    ssl_certificate_key /etc/nginx/ssl/dragonflyrobotics.key;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+
+`sudo ln -s /etc/nginx/sites-available/dragonflyrobotics /etc/nginx/sites-enabled/`
+`sudo rm /etc/nginx/sites-enabled/default`
+`sudo nginx -t`
+`sudo systemctl restart nginx`
+
+### Firewall
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw allow 22 (for server)
+sudo ufw reload
+sudo ufw status
+
+# Finished setting up
+`npm run dev`
