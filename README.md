@@ -108,4 +108,34 @@ Questions? [Join our Slack](https://transitiverobotics.com/slack) and we'll try 
 SuperBots Logo: <a href="https://www.flaticon.com/free-icons/robot" title="robot icons">Robot icons created by Freepik - Flaticon</a>
 
 
+### For DragonFly Developers
+
+## Run server from terminal
+ssh -i ~/.ssh/digitalocean root@server_ip
+
+## Install Packages
+apt update
+apt upgrade
+apt install npm
+apt install nodejs 
+apt install git
+
+## Install Webapp
+git clone https://github.com/transitiverobotics/transact.git
+
+## Configure Variable
+cd transact
+cp sample.env .env
+edit variable in .env 
+npm install
+
+## Configure DNS
+A; @; yourdomain@example.com; 1800
+
+## Start Webapp
+ufw allow 3000
+npm run dev
+
+## Set Up SSL
+apt install nginx
 
